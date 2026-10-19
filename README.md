@@ -16,7 +16,7 @@ secret** and add:
 | Secret | Value |
 |---|---|
 | `X_USERNAME` | your X handle, without the `@` |
-| `X_COOKIES` | `auth_token=...; ct0=...` (see "Setup" below for how to find them) |
+| `X_COOKIES` | `auth_token=...; ct0=...` (see "Run it on your computer" below for how to find them) |
 | `ANTHROPIC_API_KEY` | optional. Without it you still get the posts, just not the critical ones picked out |
 
 **Each run:** go to **Actions → Scrape Config India posts → Run workflow**. Optionally change the searches
