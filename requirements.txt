@@ -1,0 +1,4 @@
+twscrape>=0.20
+anthropic>=1.15
+pydantic>=2
+python-dotenv>=1.0
