@@ -8,7 +8,28 @@ the ones saying the event was underwhelming or not a hit.
 > account. Scraping is against X's terms. Keep volumes modest and consider a spare account, because X can
 > rate-limit or lock accounts that scrape.
 
-## Setup
+## Run it on GitHub (no install)
+
+**One-time setup:** in this repo on GitHub, go to **Settings → Secrets and variables → Actions → New repository
+secret** and add:
+
+| Secret | Value |
+|---|---|
+| `X_USERNAME` | your X handle, without the `@` |
+| `X_COOKIES` | `auth_token=...; ct0=...` (see "Setup" below for how to find them) |
+| `ANTHROPIC_API_KEY` | optional. Without it you still get the posts, just not the critical ones picked out |
+
+**Each run:** go to **Actions → Scrape Config India posts → Run workflow**. Optionally change the searches
+(separated by `;`) or the dates, then press the green **Run workflow** button. After a few minutes, open the run:
+
+- The run page shows the counts, the most common complaints and the top critical posts with links.
+- **Artifacts → config-india-results** at the bottom of the run page downloads `tweets.csv`, `classified.csv`
+  and `critical.csv`.
+
+If the collect step fails with "not logged in", your cookies have expired. Copy fresh ones and update the
+`X_COOKIES` secret.
+
+## Run it on your computer
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -26,7 +47,7 @@ Fill in `.env`:
 
 `.env` and `accounts.db` (where twscrape keeps the session) are git-ignored. Don't commit them.
 
-## 1. Collect posts
+### 1. Collect posts
 
 ```bash
 python collect.py
@@ -41,7 +62,7 @@ python collect.py --since 2026-10-14 --until 2026-10-25 --limit 2000
 python collect.py -q '"config india" underwhelming' -q '"config india" disappointing'
 ```
 
-## 2. Find the critical ones
+### 2. Find the critical ones
 
 ```bash
 python classify.py
