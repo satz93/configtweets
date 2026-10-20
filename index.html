@@ -10,19 +10,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rubik+Mono+One&family=Schibsted+Grotesk:wght@400;500;600&display=swap">
 <style>
-  /* Layout: one badge centred on a carpet-teal backdrop with a one-line prompt underneath. Scrolling slides the current badge off the top and brings the next one up from below. */
+  /* Layout: one badge hangs on a black neck band in front of a lilac wall scattered with black dot clusters (the Config India registration wall). Scrolling slides the badge off the top and brings the next one up from below. Single light look by design. */
   :root {
-    --floor: #7fd0c9;          /* page backdrop, the hall carpet */
-    --floor-ink: #0f2e2f;      /* text on the backdrop */
-    --floor-soft: #2c5c5c;
+    --floor: #c9a3e6;          /* the lilac wall */
+    --floor-ink: #17121d;      /* text on the wall */
+    --floor-soft: #463457;
+    --dots: #121014;           /* dot clusters on the wall */
+    --band: #141414;           /* neck band and clip */
+    --band-weave: #1f1f1f;
     --paper: #fbfbf7;          /* badge card stock */
     --ink: #121417;            /* badge print */
     --ink-soft: #4a4f55;
     --rule: #121417;
     --focus: #45d35c;
-    --logo-on-light: block;    /* dark logo on the light backdrop */
-    --logo-on-dark: none;
-    --shadow: 0 18px 40px rgb(9 40 40 / .28), 0 2px 6px rgb(9 40 40 / .18);
+    --shadow: 0 22px 44px rgb(48 20 78 / .3), 0 2px 6px rgb(48 20 78 / .2);
     --stamp-sky: #74b9e2;
     --stamp-coral: #e86a4b;
     --stamp-leaf: #5cb052;
@@ -34,35 +35,15 @@
     --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
     --card-w: 320px;           /* set from the window size by script */
+    color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --floor: #0e3537; --floor-ink: #e4f4f1; --floor-soft: #9cc7c3;
-      --paper: #f1f1ec;
-      --shadow: 0 18px 44px rgb(0 0 0 / .5), 0 2px 6px rgb(0 0 0 / .35);
-      --logo-on-light: none; --logo-on-dark: block;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --floor: #0e3537; --floor-ink: #e4f4f1; --floor-soft: #9cc7c3;
-    --paper: #f1f1ec;
-    --shadow: 0 18px 44px rgb(0 0 0 / .5), 0 2px 6px rgb(0 0 0 / .35);
-    --logo-on-light: none; --logo-on-dark: block;
-    color-scheme: dark;
-  }
-
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0;
-    display: flex;
-    flex-direction: column;
+    position: relative;
     overflow: hidden;
-    background:
-      radial-gradient(circle at 20% 10%, rgb(255 255 255 / .08), transparent 40%),
-      radial-gradient(circle at 80% 90%, rgb(0 0 0 / .08), transparent 45%),
-      var(--floor);
+    background: var(--floor);
     color: var(--floor-ink);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
@@ -78,8 +59,18 @@
   .bar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   h1 { margin: 0; line-height: 0; }
   h1 img { width: auto; height: 22px; max-width: 100%; }
-  h1 .logo-light { display: var(--logo-on-light); }
-  h1 .logo-dark { display: var(--logo-on-dark); }
+  .bar { position: absolute; top: 0; left: 0; right: 0; z-index: 200; pointer-events: none; }
+  @media (max-width: 560px) {
+    .credit {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: max(10px, env(safe-area-inset-bottom, 0px));
+      justify-content: center;
+      font-size: 11px;
+    }
+    .prompt { bottom: max(44px, calc(env(safe-area-inset-bottom, 0px) + 34px)); }
+  }
+  #wall { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
@@ -92,9 +83,8 @@
   }
   /* ---------- stage ---------- */
   .stage {
-    position: relative;
-    flex: 1;
-    min-height: 0;
+    position: absolute;
+    inset: 0;
     overflow: hidden;
     touch-action: none;
     outline: none;
@@ -149,13 +139,30 @@
     .slot { transition: opacity .2s ease; }
   }
 
-  .holes { position: absolute; top: 11px; left: 0; right: 0; display: flex; justify-content: center; gap: 64px; }
-  .holes span {
-    position: relative;
-    width: 34px; height: 9px;
-    border-radius: 6px;
-    background: var(--floor);
-    box-shadow: inset 0 1px 2px rgb(0 0 0 / .25);
+  /* neck band: the strap belongs to the slot, the clip to the badge so it tilts with it */
+  .strap {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    width: 34px;
+    height: 120vh;
+    transform: translateX(-50%);
+    background: repeating-linear-gradient(0deg, var(--band) 0 3px, var(--band-weave) 3px 4px);
+    box-shadow: inset 2px 0 0 rgb(255 255 255 / .06), inset -2px 0 0 rgb(0 0 0 / .35), 0 6px 18px rgb(48 20 78 / .25);
+    opacity: 0;
+    transition: opacity .25s ease;
+  }
+  .slot[data-pos="current"] .strap { opacity: 1; transition: opacity .35s ease .35s; }
+  .clip {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    width: 50px;
+    height: 38px;
+    transform: translateX(-50%);
+    border: 7px solid var(--band);
+    border-radius: 9px;
+    box-shadow: 0 2px 4px rgb(0 0 0 / .25);
   }
   .head { display: grid; gap: 4px; }
   .mark {
@@ -235,12 +242,13 @@
 <header class="bar">
   <div class="bar-inner">
     <div class="bar-row">
-      <h1><img class="logo-light" src="logo.svg" alt="Config" width="705" height="140"><img class="logo-dark" src="logo-white.svg" alt="Config" width="705" height="140"><span class="sr-only">Said at Config India</span></h1>
+      <h1><img src="logo.svg" alt="Config" width="705" height="140"><span class="sr-only">Said at Config India</span></h1>
     </div>
     <p class="credit">Community collection · not made by Figma</p>
   </div>
 </header>
 
+<canvas id="wall" aria-hidden="true"></canvas>
 <main class="stage" id="stage" tabindex="-1" aria-roledescription="carousel" aria-label="Posts about Config India">
   <p class="prompt" id="hint">Scroll up to see more</p>
 </main>
@@ -279,8 +287,6 @@
     const badge = el("article", "badge");
     badge.style.setProperty("--accent", `var(${accents[i % accents.length]})`);
 
-    const holes = el("div", "holes");
-    holes.append(el("span"), el("span"));
 
     const head = el("div", "head");
     const labels = el("div", "labels");
@@ -320,13 +326,71 @@
     }
     foot.append(line);
 
-    badge.append(holes, head, panel, el("div", "rule"), foot);
-    slot.append(badge);
+    badge.append(el("span", "clip"), head, panel, el("div", "rule"), foot);
+    slot.append(el("span", "strap"), badge);
     return slot;
   }
 
   const slots = posts.map(buildBadge);
   stage.append(...slots);
+
+  // The wall: clusters of black ovals along the top and bottom edges, like the registration wall.
+  // Seeded, so the pattern stays put between loads and resizes.
+  const wall = document.getElementById("wall");
+  function drawWall() {
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    const w = innerWidth, h = innerHeight;
+    wall.width = w * dpr;
+    wall.height = h * dpr;
+    const ctx = wall.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--dots").trim() || "#121014";
+
+    let seed = 15102026;
+    const rand = () => {
+      seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const gauss = () => (rand() + rand() + rand() - 1.5) / 1.5;
+    const scale = Math.max(0.65, Math.min(1, w / 1200));
+    // keep the dots off the logo, the credit line and the scroll prompt
+    const clear = ["h1 img", ".credit", "#hint"]
+      .map(sel => document.querySelector(sel))
+      .filter(Boolean)
+      .map(node => {
+        const r = node.getBoundingClientRect();
+        return { l: r.left - 18, r: r.right + 18, t: r.top - 14, b: r.bottom + 14 };
+      });
+    const blocked = (x, y) => clear.some(c => x > c.l && x < c.r && y > c.t && y < c.b);
+
+    const cluster = (cx, cy, count, spread) => {
+      for (let i = 0; i < count; i++) {
+        const x = cx + gauss() * spread * 1.6;
+        const y = cy + gauss() * spread;
+        const rx = (5 + rand() * 8) * scale;
+        if (blocked(x, y)) continue;
+        ctx.beginPath();
+        ctx.ellipse(x, y, rx, rx * (0.62 + rand() * 0.25), (rand() - 0.5) * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
+    const across = Math.max(3, Math.round(w / 230));
+    for (let i = 0; i < across; i++) {
+      const x = ((i + 0.2 + rand() * 0.6) / across) * w;
+      cluster(x, rand() * h * 0.09, 14 + rand() * 30, (22 + rand() * 30) * scale);
+      cluster(((i + 0.2 + rand() * 0.6) / across) * w, h - rand() * h * 0.12, 12 + rand() * 28, (20 + rand() * 30) * scale);
+    }
+    // a few on the side edges, away from the badge
+    for (let i = 0; i < 4; i++) {
+      const left = i % 2 === 0;
+      const x = left ? rand() * w * 0.12 : w - rand() * w * 0.12;
+      cluster(x, h * (0.25 + rand() * 0.5), 10 + rand() * 18, (18 + rand() * 24) * scale);
+    }
+  }
 
   // Tilt the current badge toward the pointer, easing in and out (mouse and trackpad only).
   const tilt = (() => {
@@ -386,10 +450,11 @@
 
   function measure() {
     const w = stage.clientWidth, h = stage.clientHeight;
-    const cardW = Math.max(200, Math.min(290, w * 0.74, (h - PROMPT_SPACE - 32) / 1.58));
+    const headH = document.querySelector(".bar").offsetHeight + 34;
+    const cardW = Math.max(200, Math.min(290, w * 0.74, (h - headH - PROMPT_SPACE - 8) / 1.58));
     stage.style.setProperty("--card-w", cardW + "px");
     const cardH = cardW * 1.58;
-    geo = { stageH: h, cardH, top: Math.max(8, (h - PROMPT_SPACE - cardH) / 2) };
+    geo = { stageH: h, cardH, top: Math.max(headH, (h - PROMPT_SPACE - cardH) / 2 + 12) };
   }
 
   let current = 0;
@@ -459,11 +524,13 @@
   });
 
   addEventListener("resize", () => {
+    drawWall();
     stage.classList.add("still");
     measure();
     render();
     requestAnimationFrame(() => stage.classList.remove("still"));
   });
+  drawWall();
   stage.classList.add("still");
   measure();
     render();
