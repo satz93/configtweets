@@ -26,11 +26,6 @@
     --rule: #121417;
     --focus: #45d35c;
     --shadow: 0 22px 44px rgb(48 20 78 / .3), 0 2px 6px rgb(48 20 78 / .2);
-    --stamp-sky: #74b9e2;
-    --stamp-coral: #e86a4b;
-    --stamp-leaf: #5cb052;
-    --stamp-mustard: #f0d35b;
-    --stamp-cyan: #45bacf;
 
     --font-display: "Rubik Mono One", "Arial Black", Impact, sans-serif;
     --font-body: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
@@ -220,17 +215,14 @@
 <script>
 (() => {
   const posts = Array.isArray(window.TWEETS) ? window.TWEETS : [];
-  // Each post gets a backdrop colour, a pattern style, and a badge block colour that reads well on it.
+  // Each post gets a backdrop colour and pattern style; the badge's mark uses the same colour.
   const SCHEMES = [
-    { wall: "--wall-lilac", pattern: "patches", panels: ["--stamp-sky", "--stamp-mustard", "--stamp-leaf"] },
-    { wall: "--wall-green", pattern: "ovals", panels: ["--stamp-coral", "--stamp-sky", "--stamp-mustard"] },
-    { wall: "--wall-yellow", pattern: "patches", panels: ["--stamp-sky", "--stamp-coral", "--stamp-cyan"] },
-    { wall: "--wall-orange", pattern: "ovals", panels: ["--stamp-sky", "--stamp-cyan", "--stamp-leaf"] },
+    { wall: "--wall-lilac", pattern: "patches" },
+    { wall: "--wall-green", pattern: "ovals" },
+    { wall: "--wall-yellow", pattern: "patches" },
+    { wall: "--wall-orange", pattern: "ovals" },
   ];
-  const schemeFor = i => {
-    const sc = SCHEMES[i % SCHEMES.length];
-    return { ...sc, panel: sc.panels[Math.floor(i / SCHEMES.length) % sc.panels.length] };
-  };
+  const schemeFor = i => SCHEMES[i % SCHEMES.length];
   const stage = document.getElementById("stage");
   const hintEl = document.getElementById("hint");
 
@@ -305,7 +297,7 @@
     slot.setAttribute("aria-label", `${i + 1} of ${posts.length}`);
 
     const badge = el("article", "badge");
-    badge.style.setProperty("--accent", `var(${schemeFor(i).panel})`);
+    badge.style.setProperty("--accent", `var(${schemeFor(i).wall})`);
 
 
     const art = el("div", "art");
