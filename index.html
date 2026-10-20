@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rubik+Mono+One&family=Schibsted+Grotesk:wght@400;500;600&display=swap">
 <style>
-  /* Layout: one badge in front of a speaker-card backdrop: a bright solid colour with off-white rough patches or oval swirls, changing with each post. Scrolling moves a 3D card stack: seen badges pile up on the left, upcoming ones on the right, and the current one swings out as you scroll. Single light look by design. */
+  /* Layout: one badge in front of a speaker-card backdrop: a bright solid colour with off-white rough patches or oval swirls, changing with each post. Scrolling moves the badge with the scroll: it slides up off the top while the next one rises from below, then settles. Single light look by design. */
   :root {
     --floor: #d2a7e2;          /* backdrop colour, set per post by script */
     --wall-lilac: #d2a7e2;
@@ -87,27 +87,15 @@
     overflow: hidden;
     touch-action: none;
     outline: none;
-    perspective: 1000px;
     z-index: 2;
   }
-  .deck { position: absolute; inset: 0; transform-style: preserve-3d; }
+  .deck { position: absolute; inset: 0; }
   .slot {
     position: absolute;
     top: 0;
     left: 50%;
     width: var(--card-w);
-    transform-style: preserve-3d;
-    will-change: transform, opacity;
-  }
-  /* tints badges away from the centre toward the backdrop colour */
-  .veil {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: var(--floor);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 3;
+    will-change: transform;
   }
   .prompt {
     position: absolute;
@@ -222,7 +210,7 @@
 <canvas class="wall" aria-hidden="true"></canvas>
 <canvas class="wall" aria-hidden="true"></canvas>
 <main class="stage" id="stage" tabindex="-1" aria-roledescription="carousel" aria-label="Posts about Config India">
-  <p class="prompt" id="hint">Scroll to see more</p>
+  <p class="prompt" id="hint">Scroll up to see more</p>
 </main>
 
 <script src="tweets.js"></script>
@@ -340,7 +328,7 @@
 
     const holes = el("div", "holes");
     holes.append(el("span"), el("span"));
-    badge.append(holes, art, panel, el("div", "rule"), foot, el("span", "veil"));
+    badge.append(holes, art, panel, el("div", "rule"), foot);
     slot.append(badge);
     return slot;
   }
@@ -625,46 +613,9 @@
     };
   })();
 
-  // ---------- the card stack, following the scroll position ----------
-  // Poses from the card-stack pen: the current badge is flat in the middle; while scrolling it swings
-  // out to one side, and seen / upcoming badges settle into fanned piles on the left / right.
-  const POSE = {
-    active: { tx: 0, ry: 0, rz: 0, rx: 0, tz: 0 },
-    exitingLeft: { tx: -116, ry: -24, rz: 0, rx: 2, tz: -156 },
-    exitingRight: { tx: 116, ry: 24, rz: 0, rx: 2, tz: -156 },
-    left: n => ({ tx: -3 - 8 * n, ry: 0, rz: -4 - 2 * n, rx: 0, tz: -140 - 20 * n }),
-    right: n => ({ tx: 3 + 8 * n, ry: 0, rz: 4 + 2 * n, rx: 0, tz: -140 - 20 * n }),
-  };
-  const mix = (a, b, f) => {
-    const o = {};
-    for (const k in a) o[k] = a[k] + (b[k] - a[k]) * f;
-    return o;
-  };
-
-  // Pose of badge k when the scroll sits at position t (in badges) and badge `active` is the settled one.
-  function poseFor(k, t, active) {
-    const at = i => (i === k ? POSE.active : i > k ? POSE.left(i - k) : POSE.right(k - i));
-    const keys = [];
-    const lo = Math.floor(t), hi = lo + 1;
-    keys.push([lo, at(lo)], [hi, at(hi)]);
-    if (k === active) keys.push([k - 0.5, POSE.exitingRight], [k + 0.5, POSE.exitingLeft]);
-    keys.sort((p, q) => p[0] - q[0]);
-    let a = keys[0], b = keys[keys.length - 1];
-    for (let n = 0; n < keys.length - 1; n++) {
-      if (t >= keys[n][0] && t <= keys[n + 1][0]) { a = keys[n]; b = keys[n + 1]; break; }
-    }
-    const span = b[0] - a[0];
-    return mix(a[1], b[1], span ? (t - a[0]) / span : 0);
-  }
-
-  // The whole stack turns a little mid-move, away from the direction of travel.
-  function stackTurn(t, active) {
-    if (t === active) return 0;
-    const f = t - Math.floor(t);
-    const tri = 1 - Math.abs(2 * f - 1);
-    return (t > active ? -24 : 24) * tri;
-  }
-
+  // ---------- badges follow the scroll position ----------
+  // pos is a position in badges: at a whole number that badge sits in the middle. Between two,
+  // the earlier badge is part-way up off the top and the later one part-way up from below.
   const last = posts.length - 1;
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const instant = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -674,14 +625,13 @@
   let frame = 0;
 
   function layout() {
-    deck.style.transform = `translateZ(0) rotateY(${stackTurn(pos, current)}deg)`;
+    const above = -geo.cardH - 220;      // far enough that its shadow leaves the screen too
+    const below = geo.stageH + 40;
     slots.forEach((slot, k) => {
-      const d = Math.abs(pos - k);
-      const p = poseFor(k, pos, current);
-      slot.style.transform =
-        `translate(-50%, ${geo.top}px) translateX(${p.tx}%) rotateY(${p.ry}deg) rotateZ(${p.rz}deg) rotateX(${p.rx}deg) translateZ(${p.tz}px)`;
-      slot.style.opacity = d > 4.5 ? 0 : d > 3.5 ? 4.5 - d : 1;
-      slot.querySelector(".veil").style.opacity = (0.75 * (1 - 1 / Math.pow(3, d))).toFixed(3);
+      const d = clamp(k - pos, -1, 1);   // -1 gone above, 0 in the middle, 1 waiting below
+      const y = d < 0 ? geo.top + d * (geo.top - above) : geo.top + d * (below - geo.top);
+      slot.style.transform = `translate(-50%, ${y}px) rotate(${4 * d}deg)`;
+      slot.style.visibility = Math.abs(k - pos) >= 1 ? "hidden" : "visible";
       slot.style.pointerEvents = k === current ? "auto" : "none";
     });
   }
@@ -693,7 +643,7 @@
       slot.setAttribute("aria-hidden", k === n ? "false" : "true");
       slot.querySelectorAll("a").forEach(a => (a.tabIndex = k === n ? 0 : -1));
     });
-    hintEl.textContent = n === last ? "That's all of them · scroll back to revisit" : "Scroll to see more";
+    hintEl.textContent = n === last ? "That's all of them · scroll back to revisit" : "Scroll up to see more";
     tilt.reset();
     dots.reset();
   }
@@ -735,7 +685,7 @@
     snapSoon(140);
   }, { passive: false });
 
-  // Touch: drag in either direction; the stack follows the finger.
+  // Touch: the badge follows the finger; drag up for the next one.
   let touch = null;
   stage.addEventListener("touchstart", e => {
     clearTimeout(snapTimer);
@@ -743,9 +693,8 @@
   }, { passive: true });
   stage.addEventListener("touchmove", e => {
     if (!touch) return;
-    const dx = e.touches[0].clientX - touch.x, dy = e.touches[0].clientY - touch.y;
-    const drag = Math.abs(dx) > Math.abs(dy) ? dx : dy;
-    const next = clamp(touch.from - drag / (stage.clientWidth * 0.55), -0.3, last + 0.3);
+    const dy = e.touches[0].clientY - touch.y;
+    const next = clamp(touch.from - dy / (stage.clientHeight * 0.6), -0.3, last + 0.3);
     dir = Math.sign(next - target) || dir;
     target = next;
     kick();
