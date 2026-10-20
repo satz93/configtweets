@@ -5,8 +5,9 @@ shows the post's text, the author's name and handle, and a link to the post on X
 
 ## View it
 
-Open `index.html` in a browser. Browse one badge at a time with the arrow buttons, the ← → keys, or by
-swiping on a phone.
+Open `index.html` in a browser. The upcoming badges wait in a pile at the bottom. Scroll (or swipe up on a
+phone) to lift the next one; the current badge slides off the top. Scroll back up, or use the arrow keys,
+to go back.
 
 ## Add the real posts
 
