@@ -58,8 +58,10 @@
     gap: 8px;
   }
   .bar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  h1 { margin: 0; line-height: 0; }
+  h1 { margin: 0; line-height: 0; display: flex; align-items: flex-end; gap: 7px; }
   h1 img { width: auto; height: 22px; max-width: 100%; }
+  /* "India" sits to the right of the logo, on its baseline, as on the real badge */
+  h1 .where { font: 500 13px/1 var(--font-body); color: var(--floor-ink); margin-bottom: -1px; }
   .bar { position: absolute; top: 0; left: 0; right: 0; z-index: 200; pointer-events: none; }
   .wall {
     position: absolute; inset: 0;
@@ -209,10 +211,10 @@
 <header class="bar">
   <div class="bar-inner">
     <div class="bar-row">
-      <h1><img src="logo.svg" alt="Config" width="705" height="140"><span class="sr-only">Said at Config India</span></h1>
+      <h1><img src="logo.svg" alt="Config" width="705" height="140"><span class="where">India</span></h1>
     </div>
     <div class="tag">
-      <p class="tagline">Not invited. Didn't miss much.</p>
+      <p class="tagline">Making peace with that invite you never got.</p>
       <p class="credit">Unofficial · not made by Figma</p>
     </div>
   </div>
@@ -394,7 +396,7 @@
     const cx = w / 2, cy = h * 0.5;
 
     // keep the logo, credit line and scroll prompt readable
-    const clear = ["h1 img", ".tagline", ".credit", "#hint"]
+    const clear = ["h1", ".tagline", ".credit", "#hint"]
       .map(sel => document.querySelector(sel))
       .filter(Boolean)
       .map(node => {
