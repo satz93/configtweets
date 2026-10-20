@@ -10,14 +10,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rubik+Mono+One&family=Schibsted+Grotesk:wght@400;500;600&display=swap">
 <style>
-  /* Layout: one badge hangs on a black neck band in front of a lilac wall scattered with black dot clusters (the Config India registration wall). Scrolling slides the badge off the top and brings the next one up from below. Single light look by design. */
+  /* Layout: one badge in front of a lilac wall scattered with black dot clusters (the Config India registration wall). Scrolling slides the badge off the top and brings the next one up from below. Single light look by design. */
   :root {
     --floor: #c9a3e6;          /* the lilac wall */
     --floor-ink: #17121d;      /* text on the wall */
     --floor-soft: #463457;
     --dots: #121014;           /* dot clusters on the wall */
-    --band: #141414;           /* neck band and clip */
-    --band-weave: #1f1f1f;
     --paper: #fbfbf7;          /* badge card stock */
     --ink: #121417;            /* badge print */
     --ink-soft: #4a4f55;
@@ -60,16 +58,6 @@
   h1 { margin: 0; line-height: 0; }
   h1 img { width: auto; height: 22px; max-width: 100%; }
   .bar { position: absolute; top: 0; left: 0; right: 0; z-index: 200; pointer-events: none; }
-  @media (max-width: 560px) {
-    .credit {
-      position: fixed;
-      left: 0; right: 0;
-      bottom: max(10px, env(safe-area-inset-bottom, 0px));
-      justify-content: center;
-      font-size: 11px;
-    }
-    .prompt { bottom: max(44px, calc(env(safe-area-inset-bottom, 0px) + 34px)); }
-  }
   #wall { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -139,30 +127,13 @@
     .slot { transition: opacity .2s ease; }
   }
 
-  /* neck band: the strap belongs to the slot, the clip to the badge so it tilts with it */
-  .strap {
-    position: absolute;
-    left: 50%;
-    bottom: calc(100% + 10px);
-    width: 34px;
-    height: 120vh;
-    transform: translateX(-50%);
-    background: repeating-linear-gradient(0deg, var(--band) 0 3px, var(--band-weave) 3px 4px);
-    box-shadow: inset 2px 0 0 rgb(255 255 255 / .06), inset -2px 0 0 rgb(0 0 0 / .35), 0 6px 18px rgb(48 20 78 / .25);
-    opacity: 0;
-    transition: opacity .25s ease;
-  }
-  .slot[data-pos="current"] .strap { opacity: 1; transition: opacity .35s ease .35s; }
-  .clip {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    width: 50px;
-    height: 38px;
-    transform: translateX(-50%);
-    border: 7px solid var(--band);
-    border-radius: 9px;
-    box-shadow: 0 2px 4px rgb(0 0 0 / .25);
+  .holes { position: absolute; top: 11px; left: 0; right: 0; display: flex; justify-content: center; gap: 64px; }
+  .holes span {
+    position: relative;
+    width: 34px; height: 9px;
+    border-radius: 6px;
+    background: var(--floor);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / .25);
   }
   .head { display: grid; gap: 4px; }
   .mark {
@@ -326,8 +297,10 @@
     }
     foot.append(line);
 
-    badge.append(el("span", "clip"), head, panel, el("div", "rule"), foot);
-    slot.append(el("span", "strap"), badge);
+    const holes = el("div", "holes");
+    holes.append(el("span"), el("span"));
+    badge.append(holes, head, panel, el("div", "rule"), foot);
+    slot.append(badge);
     return slot;
   }
 
@@ -450,7 +423,7 @@
 
   function measure() {
     const w = stage.clientWidth, h = stage.clientHeight;
-    const headH = document.querySelector(".bar").offsetHeight + 34;
+    const headH = document.querySelector(".bar").offsetHeight + 16;
     const cardW = Math.max(200, Math.min(290, w * 0.74, (h - headH - PROMPT_SPACE - 8) / 1.58));
     stage.style.setProperty("--card-w", cardW + "px");
     const cardH = cardW * 1.58;
