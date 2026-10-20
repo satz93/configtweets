@@ -538,7 +538,7 @@
     canvas.setAttribute("aria-hidden", "true");
     const ctx = canvas.getContext("2d");
     const GAP = 9, RADIUS = 58;
-    let panel = null, mx = 0, my = 0, shown = 0, want = 0, frame = 0;
+    let panel = null, mx = 0, my = 0, shown = 0, want = 0, frame = 0, tint = [0, 0, 0];
 
     const hash = (i, j) => {
       let h = Math.imul(i, 73856093) ^ Math.imul(j, 19349663);
@@ -548,6 +548,9 @@
 
     function attach(p) {
       panel = p;
+      // the twinkling dots borrow the backdrop colour of this post
+      const hex = getComputedStyle(p).getPropertyValue("--accent").trim().replace("#", "");
+      tint = hex.length === 6 ? [0, 2, 4].map(k => parseInt(hex.slice(k, k + 2), 16)) : [120, 120, 120];
       p.prepend(canvas);
       const dpr = Math.min(2, devicePixelRatio || 1);
       canvas.width = Math.round(p.clientWidth * dpr);
@@ -574,8 +577,8 @@
             const twinkle = still ? 0.5 : 0.5 + 0.5 * Math.sin(t * 0.004 * (0.6 + hv * 1.6) + hv * 50);
             const bright = hv > 0.86;
             ctx.fillStyle = bright
-              ? `rgba(255, 255, 255, ${(0.35 + 0.6 * twinkle) * fall})`
-              : `rgba(18, 20, 23, ${0.45 * fall})`;
+              ? `rgba(${tint[0]}, ${tint[1]}, ${tint[2]}, ${(0.3 + 0.5 * twinkle) * fall})`
+              : `rgba(18, 20, 23, ${0.16 * fall})`;
             ctx.beginPath();
             ctx.arc(x, y, bright ? 2.1 : 1.7, 0, Math.PI * 2);
             ctx.fill();
