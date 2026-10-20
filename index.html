@@ -161,16 +161,15 @@
   .panel {
     position: relative;
     min-height: 0;
-    background: var(--accent);
-    border-radius: 4px;
-    padding: 34px 16px 16px;
-    overflow: auto;
-    scrollbar-width: thin;
+    padding: 32px 0 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
   .panel::before {
     content: "\201C";
     position: absolute;
-    top: 2px; left: 12px;
+    top: 0; left: -2px;
     font: 400 46px/1 var(--font-display);
     color: var(--ink);
     z-index: 1;
@@ -188,6 +187,16 @@
     text-wrap: pretty;
     overflow-wrap: anywhere;
   }
+  /* small scalloped mark in the post's colour, bottom right above the rule; it shrinks for long posts */
+  .art {
+    flex: 1 1 0;
+    min-height: 34px;
+    max-height: 46%;
+    align-self: flex-end;
+    aspect-ratio: 1;
+    color: var(--accent);
+  }
+  .art svg { display: block; width: 100%; height: 100%; }
   .quote.s1 { font-size: 23px; }
   .quote.s2 { font-size: 19px; }
   .quote.s3 { font-size: 16.5px; }
@@ -276,6 +285,53 @@
     return node;
   };
 
+  // Scalloped marks like the badge illustrations: a shape filled in the post's colour, with circles
+  // along its edges so the outline looks puffy. Shapes take turns: star, ring, cloud.
+  function artFor(i) {
+    const rand = (seed => () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    })(i * 4099 + 17);
+    const star = (R, r, rot = -Math.PI / 2) => Array.from({ length: 10 }, (_, k) => {
+      const a = rot + (k * Math.PI) / 5, rad = k % 2 ? r : R;
+      return [50 + Math.cos(a) * rad, 50 + Math.sin(a) * rad];
+    });
+    const circle = (R, n = 28) => Array.from({ length: n }, (_, k) => {
+      const a = (k / n) * Math.PI * 2;
+      return [50 + Math.cos(a) * R, 50 + Math.sin(a) * R];
+    });
+    // walk the outline and drop puffs every few units
+    const puffs = (pts, size, fill) => {
+      let out = "";
+      for (let k = 0; k < pts.length; k++) {
+        const [x1, y1] = pts[k], [x2, y2] = pts[(k + 1) % pts.length];
+        const len = Math.hypot(x2 - x1, y2 - y1), steps = Math.max(1, Math.round(len / (size * 0.9)));
+        for (let s = 0; s < steps; s++) {
+          const t = s / steps;
+          out += `<circle cx="${(x1 + (x2 - x1) * t).toFixed(1)}" cy="${(y1 + (y2 - y1) * t).toFixed(1)}" r="${(size * (0.8 + rand() * 0.4)).toFixed(1)}" fill="${fill}"/>`;
+        }
+      }
+      return out;
+    };
+    const poly = (pts, fill) => `<polygon points="${pts.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ")}" fill="${fill}"/>`;
+    const ink = "currentColor", paper = "var(--paper)";
+    const kind = i % 3;
+    let body;
+    if (kind === 0) {
+      const outer = star(42, 22), hole = star(15, 8);
+      body = poly(outer, ink) + puffs(outer, 6.5, ink) + poly(hole, paper) + puffs(hole, 3.6, paper);
+    } else if (kind === 1) {
+      const outer = circle(38), hole = circle(14, 16);
+      body = poly(outer, ink) + puffs(outer, 7, ink) + poly(hole, paper) + puffs(hole, 4, paper);
+    } else {
+      const lobes = [[50, 30], [70, 42], [64, 66], [38, 68], [30, 44]];
+      body = `<circle cx="50" cy="51" r="20" fill="${ink}"/>`
+        + lobes.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${(15 + rand() * 4).toFixed(1)}" fill="${ink}"/>`).join("")
+        + puffs(circle(33, 22), 6, ink);
+    }
+    return `<svg viewBox="0 0 100 100" focusable="false">${body}</svg>`;
+  }
+
   function buildBadge(post, i) {
     const slot = el("div", "slot");
     slot.dataset.index = i;
@@ -301,7 +357,10 @@
     const text = String(post.text || "");
     const panel = el("div", "panel");
     const quote = el("p", `quote ${sizeClass(text)}`, text);
-    panel.append(quote);
+    const art = el("div", "art");
+    art.innerHTML = artFor(i);
+    art.setAttribute("aria-hidden", "true");
+    panel.append(quote, art);
 
     const foot = el("div", "foot");
     const fullName = String(post.name || post.handle || "Unknown");
