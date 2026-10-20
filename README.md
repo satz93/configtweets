@@ -1,4 +1,4 @@
-# Said at Config India
+# configtweets
 
 Posts about Config India (Bengaluru, 15 Oct 2026) shown as conference badges you can flip through. Each badge
 shows the post's text, the author's name and a link to the post on X.
@@ -31,7 +31,7 @@ Long posts shrink their text until they fit the badge.
 ## Sharing
 
 The site is a static page, so GitHub Pages can host it as is: **Settings → Pages → Deploy from a branch →
-`claude/intelligent-fermi-mu0uz4`, folder `/ (root)`**. It then lives at <https://satz93.github.io/xscrapper/>.
+`claude/intelligent-fermi-mu0uz4`, folder `/ (root)`**. It then lives at <https://satz93.github.io/configtweets/> (the repo is named `configtweets`).
 
 `index.html` carries the link-preview tags (title, description and `share.png`, 1200×630) that X, LinkedIn,
 WhatsApp and Slack read. They point at that address; if the site moves, update the `og:url`, `og:image` and
