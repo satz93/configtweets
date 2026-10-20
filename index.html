@@ -191,8 +191,9 @@
 
   .rule { height: 1.5px; background: var(--rule); }
 
-  .foot { display: flex; align-items: stretch; justify-content: space-between; gap: 12px; min-height: 0; }
-  .who { min-width: 0; display: grid; align-content: start; gap: 3px; }
+  .foot { display: grid; gap: 4px; min-height: 0; }
+  .line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .line .handle { min-width: 0; }
   .name {
     margin: 0 0 4px;
     font: 500 clamp(21px, 6.4vw, 26px)/1.05 var(--font-body);
@@ -207,22 +208,9 @@
   }
   .meta.handle { color: var(--ink); }
 
-  .qr {
-    flex: none;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 8px;
-    color: var(--ink);
-    text-decoration: none;
-    font: 500 12.5px/1.25 var(--font-body);
-  }
-  .qr-code { width: 64px; height: 64px; display: grid; place-items: center; }
-  .qr-code img, .qr-code canvas { width: 64px !important; height: 64px !important; image-rendering: pixelated; }
-  .qr-code.fallback { border: 1.5px solid var(--ink); border-radius: 6px; font: 400 26px/1 var(--font-body); }
-  .qr:hover span, .qr:focus-visible span { text-decoration: underline; }
-  .qr:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+  .xlink { flex: none; color: var(--ink); text-decoration: none; }
+  .xlink:hover { text-decoration: underline; }
+  .xlink:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 2px; }
 
   /* ---------- controls ---------- */
   .controls { display: flex; align-items: center; justify-content: center; gap: 18px; }
@@ -279,7 +267,6 @@
   <p class="hint" id="hint">Use the arrow keys or swipe</p>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="tweets.js"></script>
 <script>
 (() => {
@@ -342,32 +329,18 @@
     panel.append(quote);
 
     const foot = el("div", "foot");
-    const who = el("div", "who");
-    who.append(el("p", "name", post.name || post.handle || "Unknown"));
-    if (post.handle) who.append(el("p", "meta handle", "@" + String(post.handle).replace(/^@/, "")));
-    foot.append(who);
-
+    foot.append(el("p", "name", post.name || post.handle || "Unknown"));
+    const line = el("div", "line");
+    line.append(el("span", "meta handle", post.handle ? "@" + String(post.handle).replace(/^@/, "") : ""));
     if (post.url) {
-      const link = el("a", "qr");
+      const link = el("a", "meta xlink", "View on X");
       link.href = post.url;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.setAttribute("aria-label", `Open ${post.name || "this"} post on X`);
-      const code = el("div", "qr-code");
-      link.append(el("span", null, "View on X"), code);
-      foot.append(link);
-      try {
-        new QRCode(code, {
-          text: post.url, width: 128, height: 128,
-          colorDark: "#121417", colorLight: "#fbfbf7",
-          correctLevel: QRCode.CorrectLevel.M,
-        });
-        code.removeAttribute("title");
-      } catch {
-        code.classList.add("fallback");
-        code.textContent = "↗";
-      }
+      line.append(link);
     }
+    foot.append(line);
 
     badge.append(holes, head, panel, el("div", "rule"), foot);
     slot.append(badge);

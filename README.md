@@ -1,7 +1,7 @@
 # Said at Config India
 
 Posts about Config India (Bengaluru, 15 Oct 2026) shown as conference badges you can flip through. Each badge
-shows the post's text, the author's name and handle, and a link plus a QR code that open the post on X.
+shows the post's text, the author's name and handle, and a link to the post on X.
 
 ## View it
 
