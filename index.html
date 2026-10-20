@@ -193,13 +193,19 @@
 
   .foot { display: grid; gap: 4px; min-height: 0; }
   .line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-  .line .handle { min-width: 0; }
+  .line .handle { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .name {
     margin: 0 0 4px;
     font: 500 clamp(21px, 6.4vw, 26px)/1.05 var(--font-body);
     letter-spacing: -.02em;
     overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
+  .name.long { font-size: clamp(18px, 5.4vw, 21px); }
+  .name.longer { font-size: clamp(16px, 4.6vw, 18px); line-height: 1.12; }
   .meta {
     margin: 0;
     font: 400 12.5px/1.25 var(--font-body);
@@ -329,9 +335,17 @@
     panel.append(quote);
 
     const foot = el("div", "foot");
-    foot.append(el("p", "name", post.name || post.handle || "Unknown"));
+    const fullName = String(post.name || post.handle || "Unknown");
+    const nameEl = el("p", "name", fullName);
+    if (fullName.length > 28) nameEl.classList.add("longer");
+    else if (fullName.length > 18) nameEl.classList.add("long");
+    nameEl.title = fullName;
+    foot.append(nameEl);
     const line = el("div", "line");
-    line.append(el("span", "meta handle", post.handle ? "@" + String(post.handle).replace(/^@/, "") : ""));
+    const handle = post.handle ? "@" + String(post.handle).replace(/^@/, "") : "";
+    const handleEl = el("span", "meta handle", handle);
+    handleEl.title = handle;
+    line.append(handleEl);
     if (post.url) {
       const link = el("a", "meta xlink", "View on X");
       link.href = post.url;
