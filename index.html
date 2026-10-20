@@ -176,7 +176,7 @@
     z-index: 1;
   }
   /* dot matrix revealed around the pointer */
-  .dots { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: inherit; }
+  .dots { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: inherit; z-index: 2; }
   .quote {
     position: relative;
     z-index: 1;
@@ -526,7 +526,7 @@
     geo = { stageH: h, cardH, top: Math.max(headH, (h - PROMPT_SPACE - cardH) / 2 + 12) };
   }
 
-  // A dot grid hidden on the badge's colour block, revealed in a soft circle around the pointer.
+  // A dot grid hidden on the whole badge, revealed in a small soft circle around the pointer.
   // A few dots twinkle brighter. Mouse and trackpad only.
   const dots = (() => {
     const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -534,7 +534,7 @@
     const canvas = el("canvas", "dots");
     canvas.setAttribute("aria-hidden", "true");
     const ctx = canvas.getContext("2d");
-    const GAP = 14, RADIUS = 95;
+    const GAP = 9, RADIUS = 58;
     let panel = null, mx = 0, my = 0, shown = 0, want = 0, frame = 0;
 
     const hash = (i, j) => {
@@ -574,7 +574,7 @@
               ? `rgba(255, 255, 255, ${(0.35 + 0.6 * twinkle) * fall})`
               : `rgba(18, 20, 23, ${0.45 * fall})`;
             ctx.beginPath();
-            ctx.arc(x, y, bright ? 3 : 2.6, 0, Math.PI * 2);
+            ctx.arc(x, y, bright ? 2.1 : 1.7, 0, Math.PI * 2);
             ctx.fill();
           }
         }
@@ -584,13 +584,13 @@
 
     if (fine) {
       stage.addEventListener("pointermove", e => {
-        const p = slots[current].querySelector(".panel");
+        const p = slots[current].querySelector(".badge");
         if (p !== panel) attach(p);
         const r = p.getBoundingClientRect();
-        // map through the badge tilt by scaling to the panel's untilted size
+        // map through the badge tilt by scaling to the badge's untilted size
         mx = (e.clientX - r.left) * (p.clientWidth / r.width);
         my = (e.clientY - r.top) * (p.clientHeight / r.height);
-        want = mx > -20 && my > -20 && mx < p.clientWidth + 20 && my < p.clientHeight + 20 ? 1 : 0;
+        want = mx > 0 && my > 0 && mx < p.clientWidth && my < p.clientHeight ? 1 : 0;
         if (!frame) frame = requestAnimationFrame(draw);
       });
       stage.addEventListener("pointerleave", () => { want = 0; });
