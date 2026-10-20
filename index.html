@@ -121,7 +121,7 @@
     padding: 34px 20px 18px;
     display: grid;
     grid-template-rows: auto 1fr auto auto;
-    gap: 12px;
+    gap: 14px;
     will-change: transform;
   }
   /* light that follows the pointer while the badge tilts */
@@ -147,35 +147,9 @@
     background: var(--floor);
     box-shadow: inset 0 1px 2px rgb(0 0 0 / .25);
   }
-  .head { display: flex; align-items: flex-end; gap: 8px; }
-  .mark {
-    font: 400 clamp(25px, 8.4vw, 33px)/.9 var(--font-display);
-    letter-spacing: -.01em;
-  }
-  .mark { flex: 0 0 68%; line-height: 0; }
-  .mark img { display: block; width: 100%; height: auto; }
-  .labels {
-    display: flex; justify-content: space-between; gap: 8px;
-    margin-bottom: -2px;
-    font: 500 12px/1 var(--font-body);
-  }
-
-  .panel {
-    position: relative;
-    min-height: 0;
-    padding: 32px 0 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .panel::before {
-    content: "\201C";
-    position: absolute;
-    top: 0; left: -2px;
-    font: 400 46px/1 var(--font-display);
-    color: var(--ink);
-    z-index: 1;
-  }
+  .mark { line-height: 0; flex: none; }
+  .mark img { display: block; height: 15px; width: auto; }
+  .panel { position: relative; min-height: 0; overflow: hidden; }
   /* dot matrix revealed around the pointer */
   .dots { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: inherit; z-index: 2; }
   .quote {
@@ -189,15 +163,8 @@
     text-wrap: pretty;
     overflow-wrap: anywhere;
   }
-  /* small scalloped mark in the post's colour, bottom right above the rule; it shrinks for long posts */
-  .art {
-    flex: 1 1 0;
-    min-height: 34px;
-    max-height: 46%;
-    align-self: flex-end;
-    aspect-ratio: 1;
-    color: var(--accent);
-  }
+  /* small scalloped mark in the post's colour, top left */
+  .art { width: 26%; aspect-ratio: 1; margin-left: -4px; color: var(--accent); }
   .art svg { display: block; width: 100%; height: 100%; }
   .quote.s1 { font-size: 23px; }
   .quote.s2 { font-size: 19px; }
@@ -207,7 +174,7 @@
   .rule { height: 1px; background: var(--rule); }
 
   .foot { display: grid; gap: 4px; min-height: 0; }
-  .line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .line .handle { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .name {
     margin: 0 0 4px;
@@ -345,24 +312,13 @@
     badge.style.setProperty("--accent", `var(${schemeFor(i).panel})`);
 
 
-    const head = el("div", "head");
-    const labels = el("div", "labels");
-    labels.append(el("span", null, "India"));
-    const mark = el("div", "mark");
-    const logo = el("img");
-    logo.src = "logo.svg";
-    logo.alt = "Config";
-    logo.addEventListener("error", () => { mark.textContent = "CONFIG"; });
-    mark.append(logo);
-    head.append(mark, labels);
-
-    const text = String(post.text || "");
-    const panel = el("div", "panel");
-    const quote = el("p", `quote ${sizeClass(text)}`, text);
     const art = el("div", "art");
     art.innerHTML = artFor(i);
     art.setAttribute("aria-hidden", "true");
-    panel.append(quote, art);
+
+    const text = String(post.text || "");
+    const panel = el("div", "panel");
+    panel.append(el("p", `quote ${sizeClass(text)}`, text));
 
     const foot = el("div", "foot");
     const fullName = String(post.name || post.handle || "Unknown");
@@ -372,10 +328,6 @@
     nameEl.title = fullName;
     foot.append(nameEl);
     const line = el("div", "line");
-    const handle = post.handle ? "@" + String(post.handle).replace(/^@/, "") : "";
-    const handleEl = el("span", "meta handle", handle);
-    handleEl.title = handle;
-    line.append(handleEl);
     if (post.url) {
       const link = el("a", "meta xlink", "View on X");
       link.href = post.url;
@@ -383,12 +335,21 @@
       link.rel = "noopener noreferrer";
       link.setAttribute("aria-label", `Open ${post.name || "this"} post on X`);
       line.append(link);
+    } else {
+      line.append(el("span"));
     }
+    const mark = el("span", "mark");
+    const logo = el("img");
+    logo.src = "logo.svg";
+    logo.alt = "Config";
+    logo.addEventListener("error", () => { mark.textContent = "CONFIG"; });
+    mark.append(logo);
+    line.append(mark);
     foot.append(line);
 
     const holes = el("div", "holes");
     holes.append(el("span"), el("span"));
-    badge.append(holes, head, panel, el("div", "rule"), foot);
+    badge.append(holes, art, panel, el("div", "rule"), foot);
     slot.append(badge);
     return slot;
   }
