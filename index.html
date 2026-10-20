@@ -147,8 +147,6 @@
     background: var(--floor);
     box-shadow: inset 0 1px 2px rgb(0 0 0 / .25);
   }
-  .mark { line-height: 0; flex: none; }
-  .mark img { display: block; height: 15px; width: auto; }
   .panel { position: relative; min-height: 0; overflow: hidden; }
   /* dot matrix revealed around the pointer */
   .dots { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: inherit; z-index: 2; }
@@ -335,16 +333,7 @@
       link.rel = "noopener noreferrer";
       link.setAttribute("aria-label", `Open ${post.name || "this"} post on X`);
       line.append(link);
-    } else {
-      line.append(el("span"));
     }
-    const mark = el("span", "mark");
-    const logo = el("img");
-    logo.src = "logo.svg";
-    logo.alt = "Config";
-    logo.addEventListener("error", () => { mark.textContent = "CONFIG"; });
-    mark.append(logo);
-    line.append(mark);
     foot.append(line);
 
     const holes = el("div", "holes");
