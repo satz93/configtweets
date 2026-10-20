@@ -1,7 +1,5 @@
 // Posts shown on the badges. Replace this list with the real data sheet.
 // Each post: name, handle (without @), date (ISO 8601), text, url. "role" is optional.
-// Set SAMPLE to false once these are real posts.
-window.SAMPLE = true;
 
 window.TWEETS = [
   {

@@ -69,11 +69,9 @@
   }
 
   .bar-inner {
-    max-width: 1080px;
-    margin: 0 auto;
     padding-block: 18px 6px;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-left: max(clamp(16px, 2.5vw, 32px), env(safe-area-inset-left, 0px));
+    padding-right: max(clamp(16px, 2.5vw, 32px), env(safe-area-inset-right, 0px));
     display: grid;
     gap: 8px;
   }
@@ -86,27 +84,12 @@
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
-  .count {
-    margin: 0;
-    font: 500 13px/1 var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
   .credit {
     margin: 0;
     display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
     font: 400 12px/1.3 var(--font-mono);
     color: var(--floor-soft);
   }
-  .chip {
-    font: 500 11px/1 var(--font-mono);
-    letter-spacing: .04em;
-    padding: 4px 8px;
-    border: 1.5px dashed currentColor;
-    border-radius: 999px;
-    color: var(--floor-ink);
-  }
-
   /* ---------- stage ---------- */
   .stage {
     position: relative;
@@ -253,9 +236,8 @@
   <div class="bar-inner">
     <div class="bar-row">
       <h1><img class="logo-light" src="logo.svg" alt="Config" width="705" height="140"><img class="logo-dark" src="logo-white.svg" alt="Config" width="705" height="140"><span class="sr-only">Said at Config India</span></h1>
-      <p class="count" id="count" aria-live="polite"><span id="cur">01</span> / <span id="total">00</span></p>
     </div>
-    <p class="credit">Community collection · not made by Figma <span class="chip" id="sampleChip" hidden>Sample posts</span></p>
+    <p class="credit">Community collection · not made by Figma</p>
   </div>
 </header>
 
@@ -270,18 +252,12 @@
   const accents = ["--stamp-sky", "--stamp-coral", "--stamp-leaf", "--stamp-mustard", "--stamp-cyan"];
   const stage = document.getElementById("stage");
   const hintEl = document.getElementById("hint");
-  const curEl = document.getElementById("cur");
-  const totalEl = document.getElementById("total");
-
-  document.getElementById("sampleChip").hidden = window.SAMPLE !== true;
 
   if (!posts.length) {
     stage.innerHTML = '<p class="empty">No posts yet. Add them to <code>tweets.js</code>.</p>';
-    document.getElementById("count").hidden = true;
     return;
   }
 
-  const pad = n => String(n).padStart(2, "0");
   const sizeClass = text => {
     const n = text.length;
     return n <= 110 ? "s1" : n <= 180 ? "s2" : n <= 260 ? "s3" : "s4";
@@ -351,7 +327,6 @@
 
   const slots = posts.map(buildBadge);
   stage.append(...slots);
-  totalEl.textContent = pad(posts.length);
 
   // Tilt the current badge toward the pointer, easing in and out (mouse and trackpad only).
   const tilt = (() => {
@@ -438,7 +413,6 @@
       slot.setAttribute("aria-hidden", d === 0 ? "false" : "true");
       slot.querySelectorAll("a").forEach(a => (a.tabIndex = d === 0 ? 0 : -1));
     });
-    curEl.textContent = pad(current + 1);
     hintEl.textContent = current === posts.length - 1
       ? "That's all of them · scroll back to revisit"
       : "Scroll up to see more";

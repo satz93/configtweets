@@ -21,5 +21,3 @@ Edit `tweets.js`. Each post looks like this:
   url: "https://x.com/theirhandle/status/1234567890",
 },
 ```
-
-Set `window.SAMPLE = false` at the top of the file to hide the "Sample posts" label.
