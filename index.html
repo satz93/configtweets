@@ -660,25 +660,35 @@
 
   // After the scroll stops, snap to a badge: the next one in the direction of travel
   // unless the move was tiny.
-  let snapTimer = 0, dir = 0;
+  // One gesture moves at most one badge. `from` is the badge a gesture started on; once it has
+  // snapped, the rest of that gesture (a trackpad's momentum tail) is ignored.
+  let snapTimer = 0, dir = 0, from = 0, spent = false;
   function snapSoon(delay) {
     clearTimeout(snapTimer);
     snapTimer = setTimeout(() => {
       const base = dir > 0 ? Math.floor(target) : Math.ceil(target);
       target = clamp(Math.abs(target - base) > 0.08 ? base + dir : base, 0, last);
+      spent = true;
       kick();
     }, delay);
   }
   function nudge(by) {
     if (!by) return;
     dir = Math.sign(by);
-    target = clamp(target + by, -0.3, last + 0.3);
+    target = clamp(target + by, Math.max(-0.3, from - 1), Math.min(last + 0.3, from + 1));
     kick();
   }
 
   const PX_PER_BADGE = 600;
+  const GESTURE_GAP = 260;   // ms of quiet that ends a scroll gesture
+  let lastWheel = 0;
   stage.addEventListener("wheel", e => {
     e.preventDefault();
+    const now = performance.now();
+    const quiet = now - lastWheel;
+    lastWheel = now;
+    if (quiet > GESTURE_GAP) { from = Math.round(target); spent = false; }
+    if (spent) return;
     const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? stage.clientHeight : 1;
     const delta = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * unit;
     nudge(delta / PX_PER_BADGE);
@@ -694,7 +704,8 @@
   stage.addEventListener("touchmove", e => {
     if (!touch) return;
     const dy = e.touches[0].clientY - touch.y;
-    const next = clamp(touch.from - dy / (stage.clientHeight * 0.6), -0.3, last + 0.3);
+    const start = Math.round(touch.from);
+    const next = clamp(touch.from - dy / (stage.clientHeight * 0.6), Math.max(-0.3, start - 1), Math.min(last + 0.3, start + 1));
     dir = Math.sign(next - target) || dir;
     target = next;
     kick();
