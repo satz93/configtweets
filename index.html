@@ -681,16 +681,32 @@
     if (["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); go(current - 1); }
   });
 
+  // Long posts: step the text down until it fits its card.
+  function fitText() {
+    slots.forEach(slot => {
+      const panel = slot.querySelector(".panel"), quote = slot.querySelector(".quote");
+      quote.style.fontSize = "";
+      let size = parseFloat(getComputedStyle(quote).fontSize);
+      while (panel.scrollHeight > panel.clientHeight + 1 && size > 10.5) {
+        size -= 0.5;
+        quote.style.fontSize = size + "px";
+      }
+    });
+  }
+
   addEventListener("resize", () => {
     showWall(current, true);
     stage.classList.add("still");
     measure();
+    fitText();
     render();
     requestAnimationFrame(() => stage.classList.remove("still"));
   });
   stage.classList.add("still");
   measure();
-    render();
+  fitText();
+  document.fonts?.ready.then(fitText);
+  render();
   requestAnimationFrame(() => requestAnimationFrame(() => stage.classList.remove("still")));
   stage.focus({ preventScroll: true });
 })();
