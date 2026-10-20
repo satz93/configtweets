@@ -25,7 +25,11 @@
     --ink-soft: #4a4f55;
     --rule: #121417;
     --focus: #45d35c;
-    --shadow: 0 22px 44px rgb(48 20 78 / .3), 0 2px 6px rgb(48 20 78 / .2);
+    --shadow:                  /* deep, layered drop shadow: contact, mid and a long soft fall-off */
+      0 1px 2px rgb(18 12 24 / .16),
+      0 6px 12px -2px rgb(18 12 24 / .14),
+      0 24px 40px -8px rgb(18 12 24 / .32),
+      0 56px 90px -16px rgb(18 12 24 / .42);
 
     --font-display: "Rubik Mono One", "Arial Black", Impact, sans-serif;
     --font-body: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
@@ -613,7 +617,7 @@
       let y = geo.top, r = 0, opacity = 1, z = 50, pos = "current";
       if (d < 0) {
         pos = "gone";
-        y = -geo.cardH - 60; r = -4; z = 55;
+        y = -geo.cardH - 220; r = -4; z = 55;   // far enough that its shadow leaves the screen too
         if (d < -1) opacity = 0;
       } else if (d > 0) {
         pos = "waiting";
