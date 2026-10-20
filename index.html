@@ -87,6 +87,11 @@
     letter-spacing: -.02em;
     text-wrap: balance;
   }
+  .credit {
+    margin: 8px 0 0;
+    font: 400 12px/1.3 var(--font-mono);
+    color: var(--floor-soft);
+  }
   .chip {
     font: 500 12px/1 var(--font-mono);
     letter-spacing: .04em;
@@ -148,6 +153,7 @@
     font: 400 clamp(25px, 8.4vw, 33px)/.9 var(--font-display);
     letter-spacing: -.01em;
   }
+  .mark img { display: block; width: 68%; height: auto; }
   .labels {
     display: flex; justify-content: space-between; gap: 8px;
     font: 500 12px/1.2 var(--font-body);
@@ -263,6 +269,7 @@
     <div>
       <p class="eyebrow">Bengaluru · 15 Oct 2026</p>
       <h1>Said at Config India</h1>
+      <p class="credit">Community collection · not made by Figma</p>
     </div>
     <span class="chip" id="sampleChip" hidden>Sample posts</span>
   </header>
@@ -334,7 +341,13 @@
     const head = el("div", "head");
     const labels = el("div", "labels");
     labels.append(el("span", null, "India"), el("span", null, "Posted on X"));
-    head.append(el("div", "mark", "CONFIG"), labels);
+    const mark = el("div", "mark");
+    const logo = el("img");
+    logo.src = "logo.svg";
+    logo.alt = "Config";
+    logo.addEventListener("error", () => { mark.textContent = "CONFIG"; });
+    mark.append(logo);
+    head.append(mark, labels);
 
     const text = String(post.text || "");
     const panel = el("div", "panel");
