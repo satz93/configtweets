@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rubik+Mono+One&family=Schibsted+Grotesk:wght@400;500;600&display=swap">
 <style>
-  /* Layout: one badge in front of a speaker-card backdrop: a bright solid colour with off-white rough patches or oval swirls, changing with each post. Scrolling slides the badge off the top and brings the next one up from below. Single light look by design. */
+  /* Layout: one badge in front of a speaker-card backdrop: a bright solid colour with off-white rough patches or oval swirls, changing with each post. Scrolling moves a 3D card stack: seen badges pile up on the left, upcoming ones on the right, and the current one swings out as you scroll. Single light look by design. */
   :root {
     --floor: #d2a7e2;          /* backdrop colour, set per post by script */
     --wall-lilac: #d2a7e2;
@@ -87,13 +87,27 @@
     overflow: hidden;
     touch-action: none;
     outline: none;
+    perspective: 1000px;
+    z-index: 2;
   }
+  .deck { position: absolute; inset: 0; transform-style: preserve-3d; }
   .slot {
     position: absolute;
     top: 0;
     left: 50%;
     width: var(--card-w);
-    transition: transform .7s cubic-bezier(.2, .8, .2, 1), opacity .45s ease;
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+  }
+  /* tints badges away from the centre toward the backdrop colour */
+  .veil {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--floor);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
   }
   .prompt {
     position: absolute;
@@ -106,7 +120,6 @@
     z-index: 100;
     pointer-events: none;
   }
-  .stage.still .slot { transition: none; }
 
   /* ---------- badge ---------- */
   .badge {
@@ -133,9 +146,6 @@
     background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / .45), rgb(255 255 255 / 0) 55%);
     mix-blend-mode: soft-light;
     opacity: var(--glare, 0);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .slot { transition: opacity .2s ease; }
   }
 
   .holes { position: absolute; top: 11px; left: 0; right: 0; display: flex; justify-content: center; gap: 64px; }
@@ -212,7 +222,7 @@
 <canvas class="wall" aria-hidden="true"></canvas>
 <canvas class="wall" aria-hidden="true"></canvas>
 <main class="stage" id="stage" tabindex="-1" aria-roledescription="carousel" aria-label="Posts about Config India">
-  <p class="prompt" id="hint">Scroll up to see more</p>
+  <p class="prompt" id="hint">Scroll to see more</p>
 </main>
 
 <script src="tweets.js"></script>
@@ -330,13 +340,15 @@
 
     const holes = el("div", "holes");
     holes.append(el("span"), el("span"));
-    badge.append(holes, art, panel, el("div", "rule"), foot);
+    badge.append(holes, art, panel, el("div", "rule"), foot, el("span", "veil"));
     slot.append(badge);
     return slot;
   }
 
   const slots = posts.map(buildBadge);
-  stage.append(...slots);
+  const deck = el("div", "deck");
+  deck.append(...slots);
+  stage.prepend(deck);
 
   // The backdrop, drawn per post on one of two canvases so the new one can fade in over the old.
   // Seeded by the post number, so each post always gets the same picture.
@@ -613,85 +625,159 @@
     };
   })();
 
-  let current = 0;
-  function render() {
-    slots.forEach((slot, i) => {
-      const d = i - current;
-      let y = geo.top, r = 0, opacity = 1, z = 50, pos = "current";
-      if (d < 0) {
-        pos = "gone";
-        y = -geo.cardH - 220; r = -4; z = 55;   // far enough that its shadow leaves the screen too
-        if (d < -1) opacity = 0;
-      } else if (d > 0) {
-        pos = "waiting";
-        y = geo.stageH + 40; r = 4; z = 45;
-        if (d > 1) opacity = 0;
-      }
-      slot.dataset.pos = pos;
-      slot.style.transform = `translate(-50%, ${y}px) rotate(${r}deg)`;
-      slot.style.opacity = opacity;
-      slot.style.zIndex = z;
-      slot.setAttribute("aria-hidden", d === 0 ? "false" : "true");
-      slot.querySelectorAll("a").forEach(a => (a.tabIndex = d === 0 ? 0 : -1));
+  // ---------- the card stack, following the scroll position ----------
+  // Poses from the card-stack pen: the current badge is flat in the middle; while scrolling it swings
+  // out to one side, and seen / upcoming badges settle into fanned piles on the left / right.
+  const POSE = {
+    active: { tx: 0, ry: 0, rz: 0, rx: 0, tz: 0 },
+    exitingLeft: { tx: -116, ry: -24, rz: 0, rx: 2, tz: -156 },
+    exitingRight: { tx: 116, ry: 24, rz: 0, rx: 2, tz: -156 },
+    left: n => ({ tx: -3 - 8 * n, ry: 0, rz: -4 - 2 * n, rx: 0, tz: -140 - 20 * n }),
+    right: n => ({ tx: 3 + 8 * n, ry: 0, rz: 4 + 2 * n, rx: 0, tz: -140 - 20 * n }),
+  };
+  const mix = (a, b, f) => {
+    const o = {};
+    for (const k in a) o[k] = a[k] + (b[k] - a[k]) * f;
+    return o;
+  };
+
+  // Pose of badge k when the scroll sits at position t (in badges) and badge `active` is the settled one.
+  function poseFor(k, t, active) {
+    const at = i => (i === k ? POSE.active : i > k ? POSE.left(i - k) : POSE.right(k - i));
+    const keys = [];
+    const lo = Math.floor(t), hi = lo + 1;
+    keys.push([lo, at(lo)], [hi, at(hi)]);
+    if (k === active) keys.push([k - 0.5, POSE.exitingRight], [k + 0.5, POSE.exitingLeft]);
+    keys.sort((p, q) => p[0] - q[0]);
+    let a = keys[0], b = keys[keys.length - 1];
+    for (let n = 0; n < keys.length - 1; n++) {
+      if (t >= keys[n][0] && t <= keys[n + 1][0]) { a = keys[n]; b = keys[n + 1]; break; }
+    }
+    const span = b[0] - a[0];
+    return mix(a[1], b[1], span ? (t - a[0]) / span : 0);
+  }
+
+  // The whole stack turns a little mid-move, away from the direction of travel.
+  function stackTurn(t, active) {
+    if (t === active) return 0;
+    const f = t - Math.floor(t);
+    const tri = 1 - Math.abs(2 * f - 1);
+    return (t > active ? -24 : 24) * tri;
+  }
+
+  const last = posts.length - 1;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const instant = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let current = 0;          // the settled badge
+  let pos = 0;              // where the stack is drawn
+  let target = 0;           // where the scroll wants it
+  let frame = 0;
+
+  function layout() {
+    deck.style.transform = `translateZ(0) rotateY(${stackTurn(pos, current)}deg)`;
+    slots.forEach((slot, k) => {
+      const d = Math.abs(pos - k);
+      const p = poseFor(k, pos, current);
+      slot.style.transform =
+        `translate(-50%, ${geo.top}px) translateX(${p.tx}%) rotateY(${p.ry}deg) rotateZ(${p.rz}deg) rotateX(${p.rx}deg) translateZ(${p.tz}px)`;
+      slot.style.opacity = d > 4.5 ? 0 : d > 3.5 ? 4.5 - d : 1;
+      slot.querySelector(".veil").style.opacity = (0.75 * (1 - 1 / Math.pow(3, d))).toFixed(3);
+      slot.style.pointerEvents = k === current ? "auto" : "none";
     });
-    hintEl.textContent = current === posts.length - 1
-      ? "That's all of them · scroll back to revisit"
-      : "Scroll up to see more";
+  }
+
+  function settle(n) {
+    if (n === current) return;
+    current = n;
+    slots.forEach((slot, k) => {
+      slot.setAttribute("aria-hidden", k === n ? "false" : "true");
+      slot.querySelectorAll("a").forEach(a => (a.tabIndex = k === n ? 0 : -1));
+    });
+    hintEl.textContent = n === last ? "That's all of them · scroll back to revisit" : "Scroll to see more";
     tilt.reset();
     dots.reset();
-    showWall(current);
-  }
-  function go(i) {
-    const next = Math.max(0, Math.min(posts.length - 1, i));
-    if (next === current) return;
-    current = next;
-    render();
   }
 
-  // One scroll gesture moves one badge. Trackpads keep sending wheel events after the
-  // fingers lift, so wait for a short pause before the next gesture counts.
-  let acc = 0, lastWheel = 0, lastMove = 0, gestureUsed = false;
+  function tick() {
+    pos = instant ? target : pos + (target - pos) * 0.14;
+    if (Math.abs(target - pos) < 0.001) pos = target;
+    showWall(clamp(Math.round(pos), 0, last));
+    if (Number.isInteger(target) && Math.abs(target - pos) < 0.02) settle(target);
+    layout();
+    frame = pos !== target ? requestAnimationFrame(tick) : 0;
+  }
+  const kick = () => { if (!frame) frame = requestAnimationFrame(tick); };
+
+  // After the scroll stops, snap to a badge: the next one in the direction of travel
+  // unless the move was tiny.
+  let snapTimer = 0, dir = 0;
+  function snapSoon(delay) {
+    clearTimeout(snapTimer);
+    snapTimer = setTimeout(() => {
+      const base = dir > 0 ? Math.floor(target) : Math.ceil(target);
+      target = clamp(Math.abs(target - base) > 0.08 ? base + dir : base, 0, last);
+      kick();
+    }, delay);
+  }
+  function nudge(by) {
+    if (!by) return;
+    dir = Math.sign(by);
+    target = clamp(target + by, -0.3, last + 0.3);
+    kick();
+  }
+
+  const PX_PER_BADGE = 600;
   stage.addEventListener("wheel", e => {
     e.preventDefault();
-    const t = performance.now();
-    const pause = t - lastWheel;
-    lastWheel = t;
-    if (pause > 220) { gestureUsed = false; acc = 0; }
-    if (gestureUsed || t - lastMove < 650) return;
-    acc += e.deltaY;
-    if (Math.abs(acc) > 30) {
-      go(current + (acc > 0 ? 1 : -1));
-      acc = 0;
-      lastMove = t;
-      gestureUsed = true;
-    }
+    const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? stage.clientHeight : 1;
+    const delta = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * unit;
+    nudge(delta / PX_PER_BADGE);
+    snapSoon(140);
   }, { passive: false });
 
-  let startY = null;
-  stage.addEventListener("touchstart", e => { startY = e.touches[0].clientY; }, { passive: true });
-  stage.addEventListener("touchend", e => {
-    if (startY === null) return;
-    const dy = e.changedTouches[0].clientY - startY;
-    if (Math.abs(dy) > 40) go(current + (dy < 0 ? 1 : -1));
-    startY = null;
+  // Touch: drag in either direction; the stack follows the finger.
+  let touch = null;
+  stage.addEventListener("touchstart", e => {
+    clearTimeout(snapTimer);
+    touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, from: target };
+  }, { passive: true });
+  stage.addEventListener("touchmove", e => {
+    if (!touch) return;
+    const dx = e.touches[0].clientX - touch.x, dy = e.touches[0].clientY - touch.y;
+    const drag = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+    const next = clamp(touch.from - drag / (stage.clientWidth * 0.55), -0.3, last + 0.3);
+    dir = Math.sign(next - target) || dir;
+    target = next;
+    kick();
+  }, { passive: true });
+  stage.addEventListener("touchend", () => {
+    if (!touch) return;
+    touch = null;
+    snapSoon(0);
   }, { passive: true });
 
   document.addEventListener("keydown", e => {
-    if (["ArrowDown", "ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); go(current + 1); }
-    if (["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); go(current - 1); }
+    let step = 0;
+    if (["ArrowDown", "ArrowRight", "PageDown", " "].includes(e.key)) step = 1;
+    if (["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key)) step = -1;
+    if (!step) return;
+    e.preventDefault();
+    clearTimeout(snapTimer);
+    dir = step;
+    target = clamp(Math.round(target) + step, 0, last);
+    kick();
   });
 
   addEventListener("resize", () => {
-    showWall(current, true);
-    stage.classList.add("still");
+    showWall(Math.round(pos), true);
     measure();
-    render();
-    requestAnimationFrame(() => stage.classList.remove("still"));
+    layout();
   });
-  stage.classList.add("still");
   measure();
-    render();
-  requestAnimationFrame(() => requestAnimationFrame(() => stage.classList.remove("still")));
+  current = -1;
+  settle(0);
+  layout();
+  showWall(0);
   stage.focus({ preventScroll: true });
 })();
 </script>
