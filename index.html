@@ -137,6 +137,18 @@
     display: grid;
     grid-template-rows: auto 1fr auto auto;
     gap: 12px;
+    will-change: transform;
+  }
+  /* light that follows the pointer while the badge tilts */
+  .badge::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / .45), rgb(255 255 255 / 0) 55%);
+    mix-blend-mode: soft-light;
+    opacity: var(--glare, 0);
   }
   @media (prefers-reduced-motion: reduce) {
     .slot { transition: none; }
@@ -366,6 +378,58 @@
   stage.append(...slots);
   totalEl.textContent = pad(posts.length);
 
+  // Tilt the current badge toward the pointer, easing in and out (mouse and trackpad only).
+  const tilt = (() => {
+    const enabled = matchMedia("(hover: hover) and (pointer: fine)").matches
+      && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rest = { rx: 0, ry: 0, lift: 0, glare: 0, gx: 50, gy: 50 };
+    let target = { ...rest }, now = { ...rest }, badge = null, frame = 0;
+
+    const paint = () => {
+      if (!badge) return;
+      badge.style.transform =
+        `perspective(900px) rotateX(${now.rx}deg) rotateY(${now.ry}deg) scale(${1 + now.lift * 0.03})`;
+      badge.style.setProperty("--glare", now.glare.toFixed(3));
+      badge.style.setProperty("--gx", now.gx + "%");
+      badge.style.setProperty("--gy", now.gy + "%");
+    };
+    const step = () => {
+      let moving = false;
+      for (const k in now) {
+        const diff = target[k] - now[k];
+        now[k] += diff * 0.14;
+        if (Math.abs(diff) > 0.01) moving = true;
+      }
+      paint();
+      frame = moving ? requestAnimationFrame(step) : 0;
+    };
+    const kick = () => { if (!frame) frame = requestAnimationFrame(step); };
+
+    if (enabled) {
+      stage.addEventListener("pointermove", e => {
+        badge = slots[current].querySelector(".badge");
+        const r = badge.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;
+        const y = (e.clientY - r.top) / r.height;
+        if (x < 0 || x > 1 || y < 0 || y > 1) target = { ...rest };
+        else target = { rx: (0.5 - y) * 14, ry: (x - 0.5) * 18, lift: 1, glare: 1, gx: x * 100, gy: y * 100 };
+        kick();
+      });
+      stage.addEventListener("pointerleave", () => { target = { ...rest }; kick(); });
+    }
+
+    return {
+      reset() {
+        if (badge) { badge.style.transform = ""; badge.style.removeProperty("--glare"); }
+        cancelAnimationFrame(frame);
+        frame = 0;
+        badge = null;
+        target = { ...rest };
+        now = { ...rest };
+      },
+    };
+  })();
+
   let current = 0;
   function render() {
     slots.forEach((slot, i) => {
@@ -377,6 +441,7 @@
     curEl.textContent = pad(current + 1);
     prevBtn.disabled = current === 0;
     nextBtn.disabled = current === posts.length - 1;
+    tilt.reset();
   }
   function go(i) {
     const next = Math.max(0, Math.min(posts.length - 1, i));
