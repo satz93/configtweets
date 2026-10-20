@@ -662,13 +662,14 @@
   // unless the move was tiny.
   // One gesture moves at most one badge. `from` is the badge a gesture started on; once it has
   // snapped, the rest of that gesture (a trackpad's momentum tail) is ignored.
-  let snapTimer = 0, dir = 0, from = 0, spent = false;
+  let snapTimer = 0, dir = 0, from = 0, spent = false, snappedAt = -1e9;
   function snapSoon(delay) {
     clearTimeout(snapTimer);
     snapTimer = setTimeout(() => {
       const base = dir > 0 ? Math.floor(target) : Math.ceil(target);
       target = clamp(Math.abs(target - base) > 0.08 ? base + dir : base, 0, last);
       spent = true;
+      snappedAt = performance.now();
       kick();
     }, delay);
   }
@@ -681,13 +682,16 @@
 
   const PX_PER_BADGE = 600;
   const GESTURE_GAP = 260;   // ms of quiet that ends a scroll gesture
+  const COOLDOWN = 800;      // ms after a badge settles before a new gesture can start
   let lastWheel = 0;
   stage.addEventListener("wheel", e => {
     e.preventDefault();
     const now = performance.now();
     const quiet = now - lastWheel;
     lastWheel = now;
-    if (quiet > GESTURE_GAP) { from = Math.round(target); spent = false; }
+    // A new gesture needs a pause in scrolling and the cooldown to have passed; anything else is
+    // the tail of the last swipe (trackpads keep coasting, sometimes with small gaps).
+    if (quiet > GESTURE_GAP && now - snappedAt > COOLDOWN) { from = Math.round(target); spent = false; }
     if (spent) return;
     const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? stage.clientHeight : 1;
     const delta = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * unit;
