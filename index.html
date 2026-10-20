@@ -197,8 +197,8 @@
 
   .rule { height: 1.5px; background: var(--rule); }
 
-  .foot { display: flex; align-items: end; justify-content: space-between; gap: 12px; min-height: 0; }
-  .who { min-width: 0; display: grid; gap: 3px; }
+  .foot { display: flex; align-items: stretch; justify-content: space-between; gap: 12px; min-height: 0; }
+  .who { min-width: 0; display: grid; align-content: start; gap: 3px; }
   .name {
     margin: 0 0 4px;
     font: 500 clamp(21px, 6.4vw, 26px)/1.05 var(--font-body);
@@ -215,13 +215,14 @@
 
   .qr {
     flex: none;
-    display: grid;
-    justify-items: center;
-    gap: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
     color: var(--ink);
     text-decoration: none;
-    font: 500 10.5px/1 var(--font-mono);
-    letter-spacing: .02em;
+    font: 500 12.5px/1.25 var(--font-body);
   }
   .qr-code { width: 64px; height: 64px; display: grid; place-items: center; }
   .qr-code img, .qr-code canvas { width: 64px !important; height: 64px !important; image-rendering: pixelated; }
@@ -306,14 +307,6 @@
   }
 
   const pad = n => String(n).padStart(2, "0");
-  const fmt = new Intl.DateTimeFormat("en-IN", {
-    day: "numeric", month: "short", year: "numeric",
-    hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata",
-  });
-  const formatDate = value => {
-    const d = new Date(value);
-    return isNaN(d) ? String(value || "") : fmt.format(d);
-  };
   const sizeClass = text => {
     const n = text.length;
     return n <= 110 ? "s1" : n <= 180 ? "s2" : n <= 260 ? "s3" : "s4";
@@ -358,8 +351,6 @@
     const who = el("div", "who");
     who.append(el("p", "name", post.name || post.handle || "Unknown"));
     if (post.handle) who.append(el("p", "meta handle", "@" + String(post.handle).replace(/^@/, "")));
-    if (post.role) who.append(el("p", "meta", post.role));
-    if (post.date) who.append(el("p", "meta", formatDate(post.date)));
     foot.append(who);
 
     if (post.url) {
@@ -369,7 +360,7 @@
       link.rel = "noopener noreferrer";
       link.setAttribute("aria-label", `Open ${post.name || "this"} post on X`);
       const code = el("div", "qr-code");
-      link.append(code, el("span", null, "View on X ↗"));
+      link.append(el("span", null, "View on X"), code);
       foot.append(link);
       try {
         new QRCode(code, {

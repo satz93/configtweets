@@ -1,7 +1,7 @@
 # Said at Config India
 
 Posts about Config India (Bengaluru, 15 Oct 2026) shown as conference badges you can flip through. Each badge
-shows the post's text, who posted it and when, plus a QR code and link to the post on X.
+shows the post's text, the author's name and handle, and a link plus a QR code that open the post on X.
 
 ## View it
 
@@ -16,8 +16,7 @@ Edit `tweets.js`. Each post looks like this:
 {
   name: "Full Name",
   handle: "theirhandle",            // without the @
-  role: "Product Designer",         // optional
-  date: "2026-10-15T10:12:00+05:30",
+  date: "2026-10-15T10:12:00+05:30", // kept for reference, not shown
   text: "The post text…",
   url: "https://x.com/theirhandle/status/1234567890",
 },
