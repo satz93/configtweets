@@ -175,12 +175,6 @@
     font: 400 46px/1 var(--font-display);
     color: var(--ink);
   }
-  .num {
-    position: absolute;
-    top: 10px; right: 12px;
-    font: 500 13px/1 var(--font-mono);
-    font-variant-numeric: tabular-nums;
-  }
   .quote {
     margin: 0;
     font-family: var(--font-body);
@@ -333,7 +327,7 @@
 
     const head = el("div", "head");
     const labels = el("div", "labels");
-    labels.append(el("span", null, "India"), el("span", null, "Posted on X"));
+    labels.append(el("span", null, "India"));
     const mark = el("div", "mark");
     const logo = el("img");
     logo.src = "logo.svg";
@@ -345,7 +339,7 @@
     const text = String(post.text || "");
     const panel = el("div", "panel");
     const quote = el("p", `quote ${sizeClass(text)}`, text);
-    panel.append(el("span", "num", pad(i + 1)), quote);
+    panel.append(quote);
 
     const foot = el("div", "foot");
     const who = el("div", "who");
