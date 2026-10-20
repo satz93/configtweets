@@ -5,8 +5,8 @@ shows the post's text, who posted it and when, plus a QR code and link to the po
 
 ## View it
 
-Open `index.html` in a browser. Browse with the arrow buttons, the ← → keys, by swiping on a phone, or by
-tapping the badge peeking out at either side.
+Open `index.html` in a browser. Browse one badge at a time with the arrow buttons, the ← → keys, or by
+swiping on a phone.
 
 ## Add the real posts
 
